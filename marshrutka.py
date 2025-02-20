@@ -2,7 +2,8 @@ import sys
 import os
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLineEdit,
-    QPushButton, QMessageBox, QLabel, QComboBox, QDateEdit
+    QPushButton, QMessageBox, QLabel, QComboBox, QDateEdit,
+    QGridLayout, QGroupBox
 )
 from PySide6 import QtGui
 from PySide6.QtCore import Qt, QDate
@@ -123,189 +124,217 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Электронная маршрутная карта")
-        self.setStyleSheet("background-color: #f0f0f0; font-family: Arial; 24px;")
-
-        layout = QVBoxLayout()
-        layout.setAlignment(Qt.AlignTop)
-
-        title = QLabel("МАРШРУТНАЯ КАРТА")
-        title.setStyleSheet("font-size: 20px; font-weight: bold; color: black; margin-bottom: 20px;")
-        layout.addWidget(title)
         
-        # Список склейщиков отливок
-        scleyks = [
-            "Буцик", "Минакова", "Ротарь", 
-            "Чернова", "Чупахина"
-        ]
-        # Список контролеров сборки кластера
-        controlers = [
-            "Елхова", "Шестункина", "Романцева"
-        ]
-        # Список болгарщиков
-        bolgar = [
-            "Ахмаджонов", "Отаназаров", "Косимов", "Туичев",
-            "Машрапов", "Эргашев", "Самиев", "Исмаилов"
-        ]
-        # Список тербообработчиков
-        termob = [
-            "Эгамов", "Аюбов"
-        ]
-        # Список дробеметных обработчиков
-        drobem = [
-            "Эгамов", "Аюбов"
-        ]
-        # Список специалистов по зачистки
-        zachistka = [
-            "Абдуллаев", "Бурхонов", "Матесаев", "Мещерякова",
-            "Самиев", "Леонтьева"
-        ]
-                        
-        # Сортировка списков
-        scleyks.sort()
-        controlers.sort()
-        bolgar.sort()
-        termob.sort()
-        drobem.sort()
-        zachistka.sort()
-
-        # Загрузка учетных номеров
-        self.учетный_номер = QComboBox(self)
-        self.учетный_номер.addItems(load_account_numbers('plavka.xlsx'))
-        self.учетный_номер.currentTextChanged.connect(self.update_experiment_details)
-        layout.addWidget(self.учетный_номер)
-
-        self.наименование_отливки = QLineEdit(self)
-        self.наименование_отливки.setPlaceholderText("Наименование отливки")
-        layout.addWidget(self.наименование_отливки)
-
-        self.тип_эксперемента = QLineEdit(self)
-        self.тип_эксперемента.setPlaceholderText("Тип эксперимента")
-        layout.addWidget(self.тип_эксперемента)
-        
-        self.сборка_кластера_дата = QDateEdit(self)
-        self.сборка_кластера_дата.setDisplayFormat("dd.MM.yyyy")
-        self.сборка_кластера_дата.setCalendarPopup(True)
+        # Initialize all form fields
+        self.учетный_номер = QComboBox()
+        self.наименование_отливки = QLineEdit()
+        self.тип_эксперемента = QLineEdit()
+        self.сборка_кластера_дата = QDateEdit()
         self.сборка_кластера_дата.setDate(QDate.currentDate())
-        layout.addWidget(QLabel("Дата сборки кластера"))
-        layout.addWidget(self.сборка_кластера_дата)
-
-        # Заменяем QLineEdit на QComboBox для специалиста сборки кластера
-        self.сборка_кластера_специалист = QComboBox(self)
-        self.сборка_кластера_специалист.addItems(scleyks)  # Добавляем участников в комбобокс
-        self.сборка_кластера_специалист.setFont(QtGui.QFont("Aptos", 10, QtGui.QFont.Bold))
-        self.сборка_кластера_специалист.setStyleSheet("color: black;")
-        self.сборка_кластера_специалист.setCurrentIndex(-1)  # Ничего не выбрано по умолчанию
-        self.сборка_кластера_специалист.setPlaceholderText("Специалист по сборке кластера")
-        layout.addWidget(self.сборка_кластера_специалист)
-
-        self.сборка_кластера_количество = QLineEdit(self)
-        self.сборка_кластера_количество.setPlaceholderText("Количество кластера")
-        layout.addWidget(self.сборка_кластера_количество)
-
-        self.контроль_сборки_кластера_дата_выставления = QDateEdit(self)
-        self.контроль_сборки_кластера_дата_выставления.setDisplayFormat("dd.MM.yyyy")
-        self.контроль_сборки_кластера_дата_выставления.setCalendarPopup(True)
+        self.сборка_кластера_дата.setCalendarPopup(True)
+        self.сборка_кластера_дата.setDisplayFormat("dd.MM.yyyy")
+        self.сборка_кластера_специалист = QComboBox()
+        self.сборка_кластера_специалист.addItems(["Иванов", "Петров", "Сидоров", "Смирнов"])
+        self.сборка_кластера_количество = QLineEdit()
+        self.контроль_сборки_кластера_дата_выставления = QDateEdit()
         self.контроль_сборки_кластера_дата_выставления.setDate(QDate.currentDate())
-        layout.addWidget(QLabel("Дата выставления кластера"))
-        layout.addWidget(self.контроль_сборки_кластера_дата_выставления)
-
-        self.контроль_сборки_кластера_время_выставления = QLineEdit(self)
-        self.контроль_сборки_кластера_время_выставления.setPlaceholderText("Время (ЧЧ:ММ)")
-        self.контроль_сборки_кластера_время_выставления.setStyleSheet("padding: 10px; margin-bottom: 10px;")
-        self.контроль_сборки_кластера_время_выставления.setInputMask("99:99")
-        #self.контроль_сборки_кластера_время_выставления.setMaxLength(5)
-        layout.addWidget(QLabel("Время выставления кластера (ЧЧ:ММ):"))
-        layout.addWidget(self.контроль_сборки_кластера_время_выставления)
-
-        # Заменяем QLineEdit на QComboBox для специалиста контроля сборки кластера
-        self.контроль_сборки_кластера_специалист = QComboBox(self)
-        self.контроль_сборки_кластера_специалист.addItems(controlers)  # Добавляем участников в комбобокс
-        self.контроль_сборки_кластера_специалист.setFont(QtGui.QFont("Aptos", 10, QtGui.QFont.Bold))
-        self.контроль_сборки_кластера_специалист.setStyleSheet("color: black;")
-        self.контроль_сборки_кластера_специалист.setCurrentIndex(-1)  # Ничего не выбрано по умолчанию
-        self.контроль_сборки_кластера_специалист.setPlaceholderText("Специалист по контролю кластера")
-        layout.addWidget(self.контроль_сборки_кластера_специалист)
-
-        self.номер_кластера = QLineEdit(self)
-        self.номер_кластера.setPlaceholderText("Номер кластера")
-        layout.addWidget(self.номер_кластера)
-
-        self.количество_кластеров = QLineEdit(self)
-        self.количество_кластеров.setPlaceholderText("Количество кластеров")
-        layout.addWidget(self.количество_кластеров)
-
-        self.болгарка_дата = QDateEdit(self)
-        self.болгарка_дата.setDisplayFormat("dd.MM.yyyy")
-        self.болгарка_дата.setCalendarPopup(True)
+        self.контроль_сборки_кластера_дата_выставления.setCalendarPopup(True)
+        self.контроль_сборки_кластера_дата_выставления.setDisplayFormat("dd.MM.yyyy")
+        self.контроль_сборки_кластера_время_выставления = QLineEdit()
+        self.контроль_сборки_кластера_специалист = QComboBox()
+        self.контроль_сборки_кластера_специалист.addItems(["Иванов", "Петров", "Сидоров", "Смирнов"])
+        self.болгарка_дата = QDateEdit()
         self.болгарка_дата.setDate(QDate.currentDate())
-        layout.addWidget(self.болгарка_дата)
-
-        # Заменяем QLineEdit на QComboBox для специалиста по болгарке
-        self.болгарка_специалист = QComboBox(self)
-        self.болгарка_специалист.addItems(bolgar)  # Добавляем участников в комбобокс
-        self.болгарка_специалист.setFont(QtGui.QFont("Aptos", 10, QtGui.QFont.Bold))
-        self.болгарка_специалист.setStyleSheet("color: black;")
-        self.болгарка_специалист.setCurrentIndex(-1)  # Ничего не выбрано по умолчанию
-        self.болгарка_специалист.setPlaceholderText("Специалист по резке")
-        layout.addWidget(self.болгарка_специалист)
-
-        # Заменяем QLineEdit на QComboBox для специалиста по термообработки
-        self.термообработка_специалист = QComboBox(self)
-        self.термообработка_специалист.addItems(termob)  # Добавляем участников в комбобокс
-        self.термообработка_специалист.setFont(QtGui.QFont("Aptos", 10, QtGui.QFont.Bold))
-        self.термообработка_специалист.setStyleSheet("color: black;")
-        self.термообработка_специалист.setCurrentIndex(-1)  # Ничего не выбрано по умолчанию
-        self.термообработка_специалист.setPlaceholderText("Специалист по термообработке")
-        layout.addWidget(self.термообработка_специалист)
+        self.болгарка_дата.setCalendarPopup(True)
+        self.болгарка_дата.setDisplayFormat("dd.MM.yyyy")
+        self.болгарка_специалист = QComboBox()
+        self.болгарка_специалист.addItems(["Иванов", "Петров", "Сидоров", "Смирнов"])
+        self.термообработка_специалист = QComboBox()
+        self.термообработка_специалист.addItems(["Иванов", "Петров", "Сидоров", "Смирнов"])
+        self.дробеметная_обработка_специалист = QComboBox()
+        self.дробеметная_обработка_специалист.addItems(["Иванов", "Петров", "Сидоров", "Смирнов"])
+        self.зачистка_корона_специалист = QComboBox()
+        self.зачистка_корона_специалист.addItems(["Иванов", "Петров", "Сидоров", "Смирнов"])
+        self.зачистка_лапа_специалист = QComboBox()
+        self.зачистка_лапа_специалист.addItems(["Иванов", "Петров", "Сидоров", "Смирнов"])
+        self.зачистка_питатель_специалист = QComboBox()
+        self.зачистка_питатель_специалист.addItems(["Иванов", "Петров", "Сидоров", "Смирнов"])
+        self.примечание = QLineEdit()
         
-        # Заменяем QLineEdit на QComboBox для специалиста по дробеметной обработке
-        self.дробеметная_обработка_специалист = QComboBox(self)
-        self.дробеметная_обработка_специалист.addItems(drobem)  # Добавляем участников в комбобокс
-        self.дробеметная_обработка_специалист.setFont(QtGui.QFont("Aptos", 10, QtGui.QFont.Bold))
-        self.дробеметная_обработка_специалист.setStyleSheet("color: black;")
-        self.дробеметная_обработка_специалист.setCurrentIndex(-1)  # Ничего не выбрано по умолчанию
-        self.дробеметная_обработка_специалист.setPlaceholderText("Специалист по дробеметной обработке")
-        layout.addWidget(self.дробеметная_обработка_специалист)
+        # Apply stylesheet
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #ffffff;
+                font-family: 'Segoe UI', Arial;
+                font-size: 11px;
+            }
+            QLabel {
+                color: #333333;
+                padding: 3px;
+            }
+            QLineEdit, QComboBox {
+                padding: 5px;
+                border: 1px solid #cccccc;
+                border-radius: 3px;
+                background-color: #ffffff;
+                min-width: 180px;
+                margin-bottom: 5px;
+            }
+            QDateEdit {
+                padding: 5px 25px 5px 5px;
+                border: 1px solid #cccccc;
+                border-radius: 3px;
+                background-color: #ffffff;
+                min-width: 180px;
+                margin-bottom: 5px;
+                font-size: 12px;
+            }
+            QDateEdit::drop-down {
+                border: none;
+                width: 20px;
+                background-color: transparent;
+            }
+            QDateEdit::down-arrow {
+                image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0YTkwZTIiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSI0IiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIiByeT0iMiI+PC9yZWN0PjxsaW5lIHgxPSIxNiIgeTE9IjIiIHgyPSIxNiIgeTI9IjYiPjwvbGluZT48bGluZSB4MT0iOCIgeTE9IjIiIHgyPSI4IiB5Mj0iNiI+PC9saW5lPjxsaW5lIHgxPSIzIiB5MT0iMTAiIHgyPSIyMSIgeTI9IjEwIj48L2xpbmU+PC9zdmc+);
+                width: 16px;
+                height: 16px;
+            }
+            QDateEdit:focus, QLineEdit:focus, QComboBox:focus {
+                border: 2px solid #4a90e2;
+                outline: none;
+            }
+            QDateEdit:hover, QLineEdit:hover, QComboBox:hover {
+                border: 1px solid #4a90e2;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 20px;
+            }
+            QPushButton {
+                background-color: #4a90e2;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 4px;
+                font-weight: bold;
+                min-width: 100px;
+            }
+            QPushButton:hover {
+                background-color: #357abd;
+            }
+            QPushButton:pressed {
+                background-color: #2d6da3;
+            }
+            QGroupBox {
+                font-weight: bold;
+                background-color: #f8f9fa;
+                border-radius: 4px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+        """)
 
-        # Заменяем QLineEdit на QComboBox для специалиста по зачистке короны
-        self.зачистка_корона_специалист = QComboBox(self)
-        self.зачистка_корона_специалист.addItems(zachistka)  # Добавляем участников в комбобокс
-        self.зачистка_корона_специалист.setFont(QtGui.QFont("Aptos", 10, QtGui.QFont.Bold))
-        self.зачистка_корона_специалист.setStyleSheet("color: black;")
-        self.зачистка_корона_специалист.setCurrentIndex(-1)  # Ничего не выбрано по умолчанию
-        self.зачистка_корона_специалист.setPlaceholderText("Специалист по зачистке короны")
-        layout.addWidget(self.зачистка_корона_специалист)
+        # Create main layout
+        main_layout = QGridLayout()
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(8)
 
-        # Заменяем QLineEdit на QComboBox для специалиста по зачистке лапы
-        self.зачистка_лапа_специалист = QComboBox(self)
-        self.зачистка_лапа_специалист.addItems(zachistka)  # Добавляем участников в комбобокс
-        self.зачистка_лапа_специалист.setFont(QtGui.QFont("Aptos", 10, QtGui.QFont.Bold))
-        self.зачистка_лапа_специалист.setStyleSheet("color: black;")
-        self.зачистка_лапа_специалист.setCurrentIndex(-1)  # Ничего не выбрано по умолчанию
-        self.зачистка_лапа_специалист.setPlaceholderText("Специалист по зачистке лапы")
-        layout.addWidget(self.зачистка_лапа_специалист)
+        # Header
+        header = QWidget()
+        header.setStyleSheet("background-color: #4a90e2; border-radius: 4px; margin-bottom: 10px;")
+        header_layout = QVBoxLayout(header)
+        header_layout.setContentsMargins(5, 5, 5, 5)
+        title = QLabel("МАРШРУТНАЯ КАРТА")
+        title.setStyleSheet("font-size: 18px; font-weight: bold; color: white; padding: 8px;")
+        title.setAlignment(Qt.AlignCenter)
+        header_layout.addWidget(title)
+        main_layout.addWidget(header, 0, 0, 1, 4)
 
-        # Заменяем QLineEdit на QComboBox для специалиста по зачистке питателя
-        self.зачистка_питатель_специалист = QComboBox(self)
-        self.зачистка_питатель_специалист.addItems(zachistka)  # Добавляем участников в комбобокс
-        self.зачистка_питатель_специалист.setFont(QtGui.QFont("Aptos", 10, QtGui.QFont.Bold))
-        self.зачистка_питатель_специалист.setStyleSheet("color: black;")
-        self.зачистка_питатель_специалист.setCurrentIndex(-1)  # Ничего не выбрано по умолчанию
-        self.зачистка_питатель_специалист.setPlaceholderText("Специалист по зачистке питателя")
-        layout.addWidget(self.зачистка_питатель_специалист)
+        # Create and populate group boxes
+        # Основная информация
+        info_group = QGroupBox("Основная информация")
+        info_layout = QVBoxLayout(info_group)
+        info_layout.addWidget(QLabel("Учетный номер:"))
+        info_layout.addWidget(self.учетный_номер)
+        info_layout.addWidget(QLabel("Наименование отливки:"))
+        info_layout.addWidget(self.наименование_отливки)
+        info_layout.addWidget(QLabel("Тип эксперимента:"))
+        info_layout.addWidget(self.тип_эксперемента)
+        main_layout.addWidget(info_group, 1, 0)
 
+        # Сборка кластера
+        assembly_group = QGroupBox("Сборка кластера")
+        assembly_layout = QVBoxLayout(assembly_group)
+        assembly_layout.addWidget(QLabel("Дата сборки:"))
+        assembly_layout.addWidget(self.сборка_кластера_дата)
+        assembly_layout.addWidget(QLabel("Специалист:"))
+        assembly_layout.addWidget(self.сборка_кластера_специалист)
+        assembly_layout.addWidget(QLabel("Количество:"))
+        assembly_layout.addWidget(self.сборка_кластера_количество)
+        main_layout.addWidget(assembly_group, 1, 1)
 
-        self.примечание = QLineEdit(self)
-        self.примечание.setPlaceholderText("Примечание")
-        layout.addWidget(self.примечание)
+        # Контроль сборки
+        control_group = QGroupBox("Контроль сборки")
+        control_layout = QVBoxLayout(control_group)
+        control_layout.addWidget(QLabel("Дата выставления:"))
+        control_layout.addWidget(self.контроль_сборки_кластера_дата_выставления)
+        control_layout.addWidget(QLabel("Время выставления:"))
+        control_layout.addWidget(self.контроль_сборки_кластера_время_выставления)
+        control_layout.addWidget(QLabel("Специалист контроля:"))
+        control_layout.addWidget(self.контроль_сборки_кластера_специалист)
+        main_layout.addWidget(control_group, 1, 2)
 
+        # Обработка
+        processing_group = QGroupBox("Обработка")
+        processing_layout = QVBoxLayout(processing_group)
+        processing_layout.addWidget(QLabel("Дата болгарки:"))
+        processing_layout.addWidget(self.болгарка_дата)
+        processing_layout.addWidget(QLabel("Специалист болгарки:"))
+        processing_layout.addWidget(self.болгарка_специалист)
+        processing_layout.addWidget(QLabel("Специалист термообработки:"))
+        processing_layout.addWidget(self.термообработка_специалист)
+        processing_layout.addWidget(QLabel("Специалист дробеметной обработки:"))
+        processing_layout.addWidget(self.дробеметная_обработка_специалист)
+        main_layout.addWidget(processing_group, 1, 3)
+
+        # Зачистка
+        cleaning_group = QGroupBox("Зачистка")
+        cleaning_layout = QVBoxLayout(cleaning_group)
+        cleaning_layout.addWidget(QLabel("Специалист зачистки короны:"))
+        cleaning_layout.addWidget(self.зачистка_корона_специалист)
+        cleaning_layout.addWidget(QLabel("Специалист зачистки лапы:"))
+        cleaning_layout.addWidget(self.зачистка_лапа_специалист)
+        cleaning_layout.addWidget(QLabel("Специалист зачистки питателя:"))
+        cleaning_layout.addWidget(self.зачистка_питатель_специалист)
+        main_layout.addWidget(cleaning_group, 2, 0, 1, 2)
+
+        # Примечание
+        note_group = QGroupBox("Дополнительно")
+        note_layout = QVBoxLayout(note_group)
+        note_layout.addWidget(QLabel("Примечание:"))
+        note_layout.addWidget(self.примечание)
+        main_layout.addWidget(note_group, 2, 2, 1, 2)
+
+        # Save button
         self.save_button = QPushButton("Сохранить", self)
-        self.save_button.setStyleSheet("background-color: #4CAF50; color: black; padding: 10px;")
-        self.save_button.setFont(QFont("Arial", 16, QFont.Bold))
+        self.save_button.setStyleSheet("""
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 10px;
+        """)
         self.save_button.clicked.connect(self.save_data)
-        layout.addWidget(self.save_button)
+        main_layout.addWidget(self.save_button, 3, 0, 1, 4)
 
-        self.setLayout(layout)
+        self.setLayout(main_layout)
+
+        # Load initial data
+        current_account_numbers = load_account_numbers('plavka.xlsx')
+        self.учетный_номер.addItems(current_account_numbers)
+        self.учетный_номер.currentTextChanged.connect(self.update_experiment_details)
 
     def update_experiment_details(self):
         """Обновляет поля на основании выбранного учетного номера"""
@@ -381,8 +410,6 @@ class MainWindow(QWidget):
         self.контроль_сборки_кластера_дата_выставления.setDate(QDate.currentDate())
         self.контроль_сборки_кластера_время_выставления.clear()
         self.контроль_сборки_кластера_специалист.setCurrentIndex(-1)  # Сброс выбора
-        self.номер_кластера.clear()
-        self.количество_кластеров.clear()
         self.болгарка_дата.setDate(QDate.currentDate())
         self.болгарка_специалист.setCurrentIndex(-1)  # Сброс выбора
         self.термообработка_специалист.setCurrentIndex(-1)  # Сброс выбора
