@@ -9,6 +9,7 @@ from PySide6 import QtGui
 from PySide6.QtCore import Qt, QDate
 from PySide6.QtGui import QFont
 from openpyxl import Workbook, load_workbook
+from datetime import datetime
 
 # Функция для загрузки учетных номеров из Excel
 def load_account_numbers(file_name):
@@ -351,16 +352,44 @@ class MainWindow(QWidget):
 
     def update_experiment_details(self):
         """Обновляет поля на основании выбранного учетного номера"""
-        selected_account = self.учетный_номер.currentText()
-        if selected_account:
-            # Загрузка данных для выбранного учетного номера
-            workbook = load_workbook('plavka.xlsx')
-            sheet = workbook.active
-            for row in sheet.iter_rows(min_row=2, values_only=True):
-                if row[1] == selected_account:  # Учетный номер во втором столбце
-                    self.наименование_отливки.setText(row[10])  # "Наименование_отливки" в 11-м столбце
-                    self.тип_эксперемента.setText(row[11])  # "Тип_эксперемента" в 12-м столбце
-                    break
+        try:
+            if os.path.exists('plavka.xlsx'):
+                wb = load_workbook('plavka.xlsx')
+                sheet = wb.active
+                account_number = self.учетный_номер.currentText()
+                
+                # Ищем строку с выбранным учетным номером
+                for row in sheet.iter_rows(min_row=2, values_only=True):
+                    if row[1] == account_number:  # Учетный_номер во втором столбце
+                        # Наименование отливки в 11-м столбце (индекс 10)
+                        if row[10]:  # Наименование_отливки
+                            self.наименование_отливки.setText(str(row[10]))
+                        
+                        # Тип эксперимента в 12-м столбце (индекс 11)
+                        if row[11]:  # Тип_эксперемента
+                            self.тип_эксперемента.setText(str(row[11]))
+                        
+                        # Дата плавки в 3-м столбце (индекс 2)
+                        плавка_дата = row[2]  # Плавка_дата
+                        
+                        if isinstance(плавка_дата, datetime):
+                            # Если дата в формате datetime
+                            qdate = QDate(плавка_дата.year, плавка_дата.month, плавка_дата.day)
+                            self.болгарка_дата.setDate(qdate)
+                        elif isinstance(плавка_дата, str):
+                            # Если дата в строковом формате DD.MM.YYYY
+                            try:
+                                day, month, year = map(int, плавка_дата.split('.'))
+                                qdate = QDate(year, month, day)
+                                if qdate.isValid():
+                                    self.болгарка_дата.setDate(qdate)
+                            except Exception as e:
+                                print(f"Ошибка при преобразовании даты: {e}")
+                        break
+                
+                wb.close()
+        except Exception as e:
+            QMessageBox.warning(self, "Ошибка", f"Ошибка при обновлении данных: {str(e)}")
 
     def validate_time(self, time_str):
         """Проверка корректности ввода времени в формате ЧЧ:ММ"""
