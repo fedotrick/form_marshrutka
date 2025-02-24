@@ -135,6 +135,43 @@ class MainWindow(QWidget):
         self.BG_COLOR = "#F3F3F3"
         self.SUCCESS_COLOR = "#45C65A"
         
+        # Добавляем цвета для темной темы
+        self.DARK_TEXT_COLOR = "#FFFFFF"
+        self.DARK_BG_COLOR = "#1A1C1E"
+        self.DARK_BORDER_COLOR = "#2D2D2D"
+        
+        # Флаг для отслеживания текущей темы
+        self.is_dark_theme = False
+        
+        # Создаем переключатель темы
+        self.theme_toggle = QPushButton(self)
+        self.theme_toggle.setFixedSize(60, 30)
+        self.theme_toggle.setCheckable(True)
+        self.theme_toggle.clicked.connect(self.toggle_theme)
+        self.theme_toggle.setStyleSheet("""
+            QPushButton {
+                background-color: #DDDBDA;
+                border: none;
+                border-radius: 15px;
+                padding: 2px;
+                text-align: left;
+            }
+            QPushButton:checked {
+                background-color: #0176D3;
+                text-align: right;
+            }
+            QPushButton::indicator {
+                width: 26px;
+                height: 26px;
+                background-color: white;
+                border-radius: 13px;
+                margin: 2px;
+            }
+            QPushButton:checked::indicator {
+                background-color: white;
+            }
+        """)
+        
         # Установка основного стиля окна
         self.setStyleSheet(f"""
             QWidget {{
@@ -271,6 +308,9 @@ class MainWindow(QWidget):
         main_layout.setSpacing(8)
         main_layout.setContentsMargins(16, 16, 16, 16)
 
+        # Добавляем горизонтальный layout для заголовка и переключателя
+        header_layout = QGridLayout()
+        
         # Заголовок
         title = QLabel("МАРШРУТНАЯ КАРТА")
         title.setStyleSheet(f"""
@@ -281,7 +321,9 @@ class MainWindow(QWidget):
             border-bottom: 2px solid {self.BORDER_COLOR};
             margin-bottom: 8px;
         """)
-        main_layout.addWidget(title)
+        header_layout.addWidget(title, 0, 0)
+        header_layout.addWidget(self.theme_toggle, 0, 1, Qt.AlignRight)
+        main_layout.addLayout(header_layout)
 
         # Создаем область содержимого
         content = QWidget()
@@ -556,6 +598,84 @@ class MainWindow(QWidget):
         
         # Очистка количества
         self.сборка_кластера_количество.clear()
+
+    def toggle_theme(self):
+        self.is_dark_theme = self.theme_toggle.isChecked()
+        
+        # Обновляем цвета в зависимости от темы
+        text_color = self.DARK_TEXT_COLOR if self.is_dark_theme else self.TEXT_COLOR
+        bg_color = self.DARK_BG_COLOR if self.is_dark_theme else self.BG_COLOR
+        border_color = self.DARK_BORDER_COLOR if self.is_dark_theme else self.BORDER_COLOR
+        
+        # Обновляем стили для всего приложения
+        self.setStyleSheet(f"""
+            QWidget {{
+                background-color: {bg_color};
+                font-family: 'Segoe UI', Arial;
+                font-size: 13px;
+                color: {text_color};
+            }}
+            QLabel {{
+                padding: 4px 0;
+                font-size: 13px;
+            }}
+            QLineEdit, QComboBox, QDateEdit {{
+                padding: 4px 8px;
+                border: 1px solid {border_color};
+                border-radius: 4px;
+                background-color: {bg_color};
+                color: {text_color};
+                min-height: 24px;
+            }}
+            QLineEdit:focus, QComboBox:focus, QDateEdit:focus {{
+                border: 2px solid {self.BRAND_COLOR};
+                outline: none;
+            }}
+            QComboBox::drop-down {{
+                border: none;
+                width: 24px;
+            }}
+            QPushButton {{
+                background-color: {self.BRAND_COLOR};
+                color: white;
+                padding: 6px 16px;
+                border: none;
+                border-radius: 4px;
+                font-weight: bold;
+                min-height: 24px;
+            }}
+            QPushButton:hover {{
+                background-color: #014486;
+            }}
+            QPushButton:pressed {{
+                background-color: #032D60;
+            }}
+            QGroupBox {{
+                border: 1px solid {border_color};
+                border-radius: 6px;
+                margin-top: 12px;
+                padding: 12px;
+                background-color: {bg_color};
+            }}
+            QGroupBox::title {{
+                color: {self.BRAND_COLOR};
+                padding: 0 8px;
+                background-color: {bg_color};
+                font-weight: bold;
+            }}
+        """)
+        
+        # Обновляем стиль заголовка
+        for widget in self.findChildren(QLabel):
+            if widget.text() == "МАРШРУТНАЯ КАРТА":
+                widget.setStyleSheet(f"""
+                    font-size: 20px;
+                    font-weight: bold;
+                    color: {self.BRAND_COLOR};
+                    padding: 0 0 8px 0;
+                    border-bottom: 2px solid {border_color};
+                    margin-bottom: 8px;
+                """)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
