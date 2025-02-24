@@ -3,10 +3,10 @@ import os
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLineEdit,
     QPushButton, QMessageBox, QLabel, QComboBox, QDateEdit,
-    QGridLayout, QScrollArea
+    QTimeEdit, QGridLayout, QScrollArea, QGroupBox
 )
 from PySide6 import QtGui
-from PySide6.QtCore import Qt, QDate
+from PySide6.QtCore import Qt, QDate, QTime
 from PySide6.QtGui import QFont
 from openpyxl import Workbook, load_workbook
 from datetime import datetime
@@ -126,7 +126,7 @@ class MainWindow(QWidget):
         super().__init__()
         self.setWindowTitle("Электронная маршрутная карта")
         # Установка фиксированного размера окна
-        self.setFixedSize(800, 900)
+        self.setFixedSize(1200, 800)
         
         # Основные цвета Aura
         self.BRAND_COLOR = "#0176D3"
@@ -188,8 +188,9 @@ class MainWindow(QWidget):
         ]
         termob = ["Эгамов", "Аюбов"]
         drobem = ["Эгамов", "Аюбов"]
-        zachistka = ["Буцик", "Минакова", "Ротарь", "Чернова", "Чупахина"]
-
+        zachistka = ["Абдуллаев", "Бурхонов", "Матесаев", "Мещерякова",
+            "Самиев", "Леонтьева"]
+        
         # Инициализация всех полей формы
         self.сборка_кластера_дата = QDateEdit(self)
         self.сборка_кластера_дата.setDisplayFormat("dd.MM.yyyy")
@@ -209,9 +210,8 @@ class MainWindow(QWidget):
         self.контроль_сборки_кластера_дата_выставления.setCalendarPopup(True)
         self.контроль_сборки_кластера_дата_выставления.setDate(QDate.currentDate())
 
-        self.контроль_сборки_кластера_время_выставления = QLineEdit(self)
-        self.контроль_сборки_кластера_время_выставления.setPlaceholderText("Время (ЧЧ:ММ)")
-        self.контроль_сборки_кластера_время_выставления.setInputMask("99:99")
+        self.контроль_сборки_кластера_время_выставления = QTimeEdit(self)
+        self.контроль_сборки_кластера_время_выставления.setDisplayFormat("HH:mm")
 
         self.контроль_сборки_кластера_специалист = QComboBox(self)
         self.контроль_сборки_кластера_специалист.addItems(controlers)
@@ -283,50 +283,106 @@ class MainWindow(QWidget):
         """)
         main_layout.addWidget(title)
 
-        # Создаем область прокрутки
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setStyleSheet(f"QScrollArea {{ border: none; background-color: {self.BG_COLOR}; }}")
+        # Создаем область содержимого
+        content = QWidget()
+        grid_layout = QGridLayout(content)
+        grid_layout.setSpacing(12)  # Увеличиваем расстояние между элементами
         
-        # Создаем виджет для содержимого прокрутки
-        scroll_content = QWidget()
-        grid_layout = QGridLayout(scroll_content)
-        grid_layout.setSpacing(8)
-        
-        current_row = 0
+        # Функция для создания группы полей
+        def create_group(title):
+            group = QGroupBox(title)
+            group.setStyleSheet(f"""
+                QGroupBox {{
+                    border: 1px solid {self.BORDER_COLOR};
+                    border-radius: 6px;
+                    margin-top: 12px;
+                    padding: 12px;
+                    background-color: white;
+                }}
+                QGroupBox::title {{
+                    color: {self.BRAND_COLOR};
+                    padding: 0 8px;
+                    background-color: white;
+                    font-weight: bold;
+                }}
+            """)
+            return group
 
-        # Размещаем элементы в сетке
-        def add_field(label_text, widget, row, col=0):
-            label = QLabel(label_text)
-            grid_layout.addWidget(label, row, col)
-            grid_layout.addWidget(widget, row, col + 1)
+        # Левая колонка
+        # Группа "Сборка кластера"
+        сборка_group = create_group("Сборка кластера")
+        сборка_layout = QGridLayout()
+        сборка_layout.addWidget(QLabel("Дата:"), 0, 0)
+        сборка_layout.addWidget(self.сборка_кластера_дата, 0, 1)
+        сборка_layout.addWidget(QLabel("Специалист:"), 1, 0)
+        сборка_layout.addWidget(self.сборка_кластера_специалист, 1, 1)
+        сборка_layout.addWidget(QLabel("Количество:"), 2, 0)
+        сборка_layout.addWidget(self.сборка_кластера_количество, 2, 1)
+        сборка_group.setLayout(сборка_layout)
+        grid_layout.addWidget(сборка_group, 0, 0)
 
-        # Добавляем поля в сетку
-        add_field("Дата сборки:", self.сборка_кластера_дата, current_row); current_row += 1
-        add_field("Специалист сборки:", self.сборка_кластера_специалист, current_row); current_row += 1
-        add_field("Количество:", self.сборка_кластера_количество, current_row); current_row += 1
-        add_field("Дата выставления:", self.контроль_сборки_кластера_дата_выставления, current_row); current_row += 1
-        add_field("Время выставления:", self.контроль_сборки_кластера_время_выставления, current_row); current_row += 1
-        add_field("Специалист контроля:", self.контроль_сборки_кластера_специалист, current_row); current_row += 1
-        add_field("Учетный номер:", self.учетный_номер, current_row); current_row += 1
-        add_field("Наименование отливки:", self.наименование_отливки, current_row); current_row += 1
-        add_field("Тип эксперимента:", self.тип_эксперемента, current_row); current_row += 1
-        add_field("Дата болгарки:", self.болгарка_дата, current_row); current_row += 1
-        add_field("Специалист болгарки:", self.болгарка_специалист, current_row); current_row += 1
-        add_field("Специалист термообработки:", self.термообработка_специалист, current_row); current_row += 1
-        add_field("Специалист дробеметной обработки:", self.дробеметная_обработка_специалист, current_row); current_row += 1
-        add_field("Специалист зачистки короны:", self.зачистка_корона_специалист, current_row); current_row += 1
-        add_field("Специалист зачистки лапы:", self.зачистка_лапа_специалист, current_row); current_row += 1
-        add_field("Специалист зачистки питателя:", self.зачистка_питатель_специалист, current_row); current_row += 1
-        
-        # Добавляем поле примечания
-        grid_layout.addWidget(QLabel("Примечание:"), current_row, 0)
+        # Группа "Контроль сборки"
+        контроль_group = create_group("Контроль сборки")
+        контроль_layout = QGridLayout()
+        контроль_layout.addWidget(QLabel("Дата:"), 0, 0)
+        контроль_layout.addWidget(self.контроль_сборки_кластера_дата_выставления, 0, 1)
+        контроль_layout.addWidget(QLabel("Время:"), 1, 0)
+        контроль_layout.addWidget(self.контроль_сборки_кластера_время_выставления, 1, 1)
+        контроль_layout.addWidget(QLabel("Специалист:"), 2, 0)
+        контроль_layout.addWidget(self.контроль_сборки_кластера_специалист, 2, 1)
+        контроль_group.setLayout(контроль_layout)
+        grid_layout.addWidget(контроль_group, 1, 0)
+
+        # Группа "Информация об отливке"
+        отливка_group = create_group("Информация об отливке")
+        отливка_layout = QGridLayout()
+        отливка_layout.addWidget(QLabel("Учетный номер:"), 0, 0)
+        отливка_layout.addWidget(self.учетный_номер, 0, 1)
+        отливка_layout.addWidget(QLabel("Наименование:"), 1, 0)
+        отливка_layout.addWidget(self.наименование_отливки, 1, 1)
+        отливка_layout.addWidget(QLabel("Тип эксперимента:"), 2, 0)
+        отливка_layout.addWidget(self.тип_эксперемента, 2, 1)
+        отливка_group.setLayout(отливка_layout)
+        grid_layout.addWidget(отливка_group, 2, 0)
+
+        # Правая колонка
+        # Группа "Обработка"
+        обработка_group = create_group("Обработка")
+        обработка_layout = QGridLayout()
+        обработка_layout.addWidget(QLabel("Дата болгарки:"), 0, 0)
+        обработка_layout.addWidget(self.болгарка_дата, 0, 1)
+        обработка_layout.addWidget(QLabel("Специалист болгарки:"), 1, 0)
+        обработка_layout.addWidget(self.болгарка_специалист, 1, 1)
+        обработка_layout.addWidget(QLabel("Специалист термообработки:"), 2, 0)
+        обработка_layout.addWidget(self.термообработка_специалист, 2, 1)
+        обработка_layout.addWidget(QLabel("Специалист дробеметки:"), 3, 0)
+        обработка_layout.addWidget(self.дробеметная_обработка_специалист, 3, 1)
+        обработка_group.setLayout(обработка_layout)
+        grid_layout.addWidget(обработка_group, 0, 1)
+
+        # Группа "Зачистка"
+        зачистка_group = create_group("Зачистка")
+        зачистка_layout = QGridLayout()
+        зачистка_layout.addWidget(QLabel("Специалист зачистки короны:"), 0, 0)
+        зачистка_layout.addWidget(self.зачистка_корона_специалист, 0, 1)
+        зачистка_layout.addWidget(QLabel("Специалист зачистки лапы:"), 1, 0)
+        зачистка_layout.addWidget(self.зачистка_лапа_специалист, 1, 1)
+        зачистка_layout.addWidget(QLabel("Специалист зачистки питателя:"), 2, 0)
+        зачистка_layout.addWidget(self.зачистка_питатель_специалист, 2, 1)
+        зачистка_group.setLayout(зачистка_layout)
+        grid_layout.addWidget(зачистка_group, 1, 1, 2, 1)
+
+        # Группа "Дополнительно" (внизу на всю ширину)
+        доп_group = create_group("Дополнительно")
+        доп_layout = QGridLayout()
+        доп_layout.addWidget(QLabel("Примечание:"), 0, 0)
         self.примечание.setFixedHeight(60)
-        grid_layout.addWidget(self.примечание, current_row, 1)
-        
-        # Устанавливаем содержимое области прокрутки
-        scroll_area.setWidget(scroll_content)
-        main_layout.addWidget(scroll_area)
+        доп_layout.addWidget(self.примечание, 0, 1)
+        доп_group.setLayout(доп_layout)
+        grid_layout.addWidget(доп_group, 3, 0, 1, 2)
+
+        # Добавляем содержимое в основной layout
+        main_layout.addWidget(content)
 
         # Кнопка сохранения
         self.save_button = QPushButton("Сохранить", self)
@@ -404,11 +460,37 @@ class MainWindow(QWidget):
         return False
 
     def save_data(self):
+        # Проверяем обязательные поля
+        required_fields = [
+            (self.учетный_номер, "Учетный номер"),
+            (self.наименование_отливки, "Наименование отливки"),
+            (self.тип_эксперемента, "Тип эксперимента"),
+            (self.сборка_кластера_специалист, "Специалист сборки"),
+            (self.контроль_сборки_кластера_специалист, "Специалист контроля")
+        ]
+        
+        empty_fields = []
+        for field, name in required_fields:
+            if isinstance(field, QComboBox):
+                if field.currentText() == "":
+                    empty_fields.append(name)
+            elif isinstance(field, QLineEdit):
+                if field.text().strip() == "":
+                    empty_fields.append(name)
+        
+        if empty_fields:
+            QMessageBox.warning(
+                self,
+                "Не все поля заполнены",
+                "Пожалуйста, заполните следующие обязательные поля:\n• " + "\n• ".join(empty_fields)
+            )
+            return
+
         сборка_кластера_дата = self.сборка_кластера_дата.date().toString("dd.MM.yyyy")
         сборка_кластера_специалист = self.сборка_кластера_специалист.currentText().strip()
         сборка_кластера_количество = self.сборка_кластера_количество.text().strip()
         контроль_сборки_кластера_дата_выставления = self.контроль_сборки_кластера_дата_выставления.date().toString("dd.MM.yyyy")
-        контроль_сборки_кластера_время_выставления = self.контроль_сборки_кластера_время_выставления.text().strip()
+        контроль_сборки_кластера_время_выставления = self.контроль_сборки_кластера_время_выставления.time().toString("HH:mm")
         контроль_сборки_кластера_специалист = self.контроль_сборки_кластера_специалист.currentText().strip()
         учетный_номер = self.учетный_номер.currentText().strip()
         болгарка_дата = self.болгарка_дата.date().toString("dd.MM.yyyy")
@@ -416,8 +498,8 @@ class MainWindow(QWidget):
         термообработка_специалист = self.термообработка_специалист.currentText().strip()
         дробеметная_обработка_специалист = self.дробеметная_обработка_специалист.currentText().strip()
         зачищка_корона_специалист = self.зачистка_корона_специалист.currentText().strip()
-        зачищка_лапа_специалист = self.зачищка_лапа_специалист.currentText().strip()
-        зачищка_питатель_специалист = self.зачищка_питатель_специалист.currentText().strip()
+        зачищка_лапа_специалист = self.зачистка_лапа_специалист.currentText().strip()
+        зачищка_питатель_специалист = self.зачистка_питатель_специалист.currentText().strip()
         примечание = self.примечание.text().strip()
 
         # Валидация времени
@@ -447,23 +529,33 @@ class MainWindow(QWidget):
         self.clear_fields()
 
     def clear_fields(self):
-        self.учетный_номер.setCurrentIndex(0)
-        self.сборка_кластера_дата.setDate(QDate.currentDate())
-        self.сборка_кластера_специалист.setCurrentIndex(-1)  # Сброс выбора
-        self.сборка_кластера_количество.clear()
-        self.контроль_сборки_кластера_дата_выставления.setDate(QDate.currentDate())
-        self.контроль_сборки_кластера_время_выставления.clear()
-        self.контроль_сборки_кластера_специалист.setCurrentIndex(-1)  # Сброс выбора
+        """Очищает все поля формы"""
+        # Очистка текстовых полей
         self.наименование_отливки.clear()
         self.тип_эксперемента.clear()
-        self.болгарка_дата.setDate(QDate.currentDate())
-        self.болгарка_специалист.setCurrentIndex(-1)  # Сброс выбора
-        self.термообработка_специалист.setCurrentIndex(-1)  # Сброс выбора
-        self.дробеметная_обработка_специалист.setCurrentIndex(-1)  # Сброс выбора
-        self.зачистка_корона_специалист.setCurrentIndex(-1)  # Сброс выбора
-        self.зачистка_лапа_специалист.setCurrentIndex(-1)  # Сброс выбора
-        self.зачистка_питатель_специалист.setCurrentIndex(-1)  # Сброс выбора
         self.примечание.clear()
+        
+        # Очистка комбобоксов
+        self.сборка_кластера_специалист.setCurrentIndex(-1)
+        self.контроль_сборки_кластера_специалист.setCurrentIndex(-1)
+        self.болгарка_специалист.setCurrentIndex(-1)
+        self.термообработка_специалист.setCurrentIndex(-1)
+        self.дробеметная_обработка_специалист.setCurrentIndex(-1)
+        self.зачистка_корона_специалист.setCurrentIndex(-1)
+        self.зачистка_лапа_специалист.setCurrentIndex(-1)
+        self.зачистка_питатель_специалист.setCurrentIndex(-1)
+        
+        # Установка пустых дат (текущая дата)
+        empty_date = QDate.currentDate()
+        self.сборка_кластера_дата.setDate(empty_date)
+        self.контроль_сборки_кластера_дата_выставления.setDate(empty_date)
+        self.болгарка_дата.setDate(empty_date)
+        
+        # Установка пустого времени (00:00)
+        self.контроль_сборки_кластера_время_выставления.setTime(QTime(0, 0))
+        
+        # Очистка количества
+        self.сборка_кластера_количество.clear()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
