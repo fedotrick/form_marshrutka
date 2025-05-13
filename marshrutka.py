@@ -1,15 +1,116 @@
 import sys
 import os
+import json
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QLineEdit,
     QPushButton, QMessageBox, QLabel, QComboBox, QDateEdit,
-    QTimeEdit, QGridLayout, QScrollArea, QGroupBox
+    QTimeEdit, QGridLayout, QScrollArea, QGroupBox,
+    QMenu, QDialog, QHBoxLayout
 )
 from PySide6 import QtGui
 from PySide6.QtCore import Qt, QDate, QTime
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QAction
 from openpyxl import Workbook, load_workbook
 from datetime import datetime
+
+# Путь к файлу с данными специалистов
+SPECIALISTS_FILE = "specialists.json"
+
+# Функции для загрузки и сохранения списков специалистов
+def load_specialists():
+    """Загружает списки специалистов из JSON файла"""
+    default_specialists = {
+        "scleyks": ["Буцик", "Минакова", "Ротарь", "Чернова", "Чупахина"],
+        "controlers": ["Елхова", "Шестункина", "Романцева"],
+        "bolgar": [
+            "Ахмаджонов", "Отаназаров", "Косимов", "Косимов-2", "Туичев",
+            "Машрапов", "Эргашев", "Самиев", "Исмаилов"
+        ],
+        "termob": ["Эгамов", "Аюбов"],
+        "drobem": ["Эгамов", "Аюбов"],
+        "zachistka": ["Абдуллаев", "Бурхонов", "Матесаев", "Мещерякова",
+            "Самиев", "Леонтьева"]
+    }
+    
+    try:
+        if os.path.exists(SPECIALISTS_FILE):
+            with open(SPECIALISTS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        else:
+            # Если файл не существует, создаем его с дефолтными значениями
+            save_specialists(default_specialists)
+            return default_specialists
+    except Exception as e:
+        print(f"Ошибка при загрузке списков специалистов: {e}")
+        return default_specialists
+
+def save_specialists(specialists_data):
+    """Сохраняет списки специалистов в JSON файл"""
+    try:
+        with open(SPECIALISTS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(specialists_data, f, ensure_ascii=False, indent=4)
+        return True
+    except Exception as e:
+        print(f"Ошибка при сохранении списков специалистов: {e}")
+        return False
+
+def add_specialist(category, name):
+    """Добавляет нового специалиста в указанную категорию"""
+    specialists = load_specialists()
+    if category in specialists:
+        if name not in specialists[category]:
+            specialists[category].append(name)
+            specialists[category].sort()  # Сортируем список
+            save_specialists(specialists)
+            return True
+    return False
+
+# Диалоговое окно для добавления специалиста
+class AddSpecialistDialog(QDialog):
+    def __init__(self, category_name, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Добавление специалиста")
+        self.setFixedSize(400, 150)
+        
+        self.category_name = category_name
+        
+        # Основной лейаут
+        layout = QVBoxLayout(self)
+        
+        # Инструкция
+        instruction = QLabel(f"Введите ФИО специалиста ({category_name})")
+        layout.addWidget(instruction)
+        
+        # Поле ввода
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("Фамилия специалиста")
+        layout.addWidget(self.name_input)
+        
+        # Кнопки
+        button_layout = QHBoxLayout()
+        
+        cancel_button = QPushButton("Отмена")
+        cancel_button.clicked.connect(self.reject)
+        
+        add_button = QPushButton("Добавить")
+        add_button.clicked.connect(self.accept_input)
+        add_button.setDefault(True)
+        
+        button_layout.addWidget(cancel_button)
+        button_layout.addWidget(add_button)
+        
+        layout.addLayout(button_layout)
+        self.setLayout(layout)
+    
+    def accept_input(self):
+        """Проверяет и принимает введенные данные"""
+        name = self.name_input.text().strip()
+        if not name:
+            QMessageBox.warning(self, "Ошибка", "Имя специалиста не может быть пустым.")
+            return
+        
+        self.specialist_name = name
+        self.accept()
 
 # Функция для загрузки учетных номеров из Excel
 def load_account_numbers(file_name):
@@ -216,28 +317,25 @@ class MainWindow(QWidget):
             }}
         """)
 
+        # Загружаем списки специалистов
+        specialists = load_specialists()
+
         # Списки специалистов
-        scleyks = ["Буцик", "Минакова", "Ротарь", "Чернова", "Чупахина"]
-        controlers = ["Елхова", "Шестункина", "Романцева"]
-        bolgar = [
-            "Ахмаджонов", "Отаназаров", "Косимов", "Косимов-2", "Туичев",
-            "Машрапов", "Эргашев", "Самиев", "Исмаилов"
-        ]
-        termob = ["Эгамов", "Аюбов"]
-        drobem = ["Эгамов", "Аюбов"]
-        zachistka = ["Абдуллаев", "Бурхонов", "Матесаев", "Мещерякова",
-            "Самиев", "Леонтьева"]
-        
+        scleyks = specialists["scleyks"]
+        controlers = specialists["controlers"]
+        bolgar = specialists["bolgar"]
+        termob = specialists["termob"]
+        drobem = specialists["drobem"]
+        zachistka = specialists["zachistka"]
+
         # Инициализация всех полей формы
         self.сборка_кластера_дата = QDateEdit(self)
         self.сборка_кластера_дата.setDisplayFormat("dd.MM.yyyy")
         self.сборка_кластера_дата.setCalendarPopup(True)
         self.сборка_кластера_дата.setDate(QDate.currentDate())
 
-        self.сборка_кластера_специалист = QComboBox(self)
-        self.сборка_кластера_специалист.addItems(scleyks)
-        self.сборка_кластера_специалист.setCurrentIndex(-1)
-        self.сборка_кластера_специалист.setPlaceholderText("Специалист по сборке кластера")
+        self.сборка_кластера_специалист = self.create_specialist_combobox(
+            "scleyks", scleyks, "Специалист по сборке кластера")
 
         self.сборка_кластера_количество = QLineEdit(self)
         self.сборка_кластера_количество.setPlaceholderText("Количество кластера")
@@ -250,10 +348,8 @@ class MainWindow(QWidget):
         self.контроль_сборки_кластера_время_выставления = QTimeEdit(self)
         self.контроль_сборки_кластера_время_выставления.setDisplayFormat("HH:mm")
 
-        self.контроль_сборки_кластера_специалист = QComboBox(self)
-        self.контроль_сборки_кластера_специалист.addItems(controlers)
-        self.контроль_сборки_кластера_специалист.setCurrentIndex(-1)
-        self.контроль_сборки_кластера_специалист.setPlaceholderText("Специалист по контролю кластера")
+        self.контроль_сборки_кластера_специалист = self.create_specialist_combobox(
+            "controlers", controlers, "Специалист по контролю кластера")
 
         self.учетный_номер = QComboBox(self)
         self.учетный_номер.addItems(load_account_numbers('plavka.xlsx'))
@@ -270,35 +366,23 @@ class MainWindow(QWidget):
         self.болгарка_дата.setCalendarPopup(True)
         self.болгарка_дата.setDate(QDate.currentDate())
 
-        self.болгарка_специалист = QComboBox(self)
-        self.болгарка_специалист.addItems(bolgar)
-        self.болгарка_специалист.setCurrentIndex(-1)
-        self.болгарка_специалист.setPlaceholderText("Специалист по резке")
+        self.болгарка_специалист = self.create_specialist_combobox(
+            "bolgar", bolgar, "Специалист по резке")
 
-        self.термообработка_специалист = QComboBox(self)
-        self.термообработка_специалист.addItems(termob)
-        self.термообработка_специалист.setCurrentIndex(-1)
-        self.термообработка_специалист.setPlaceholderText("Специалист по термообработке")
+        self.термообработка_специалист = self.create_specialist_combobox(
+            "termob", termob, "Специалист по термообработке")
 
-        self.дробеметная_обработка_специалист = QComboBox(self)
-        self.дробеметная_обработка_специалист.addItems(drobem)
-        self.дробеметная_обработка_специалист.setCurrentIndex(-1)
-        self.дробеметная_обработка_специалист.setPlaceholderText("Специалист по дробеметной обработке")
+        self.дробеметная_обработка_специалист = self.create_specialist_combobox(
+            "drobem", drobem, "Специалист по дробеметной обработке")
 
-        self.зачистка_корона_специалист = QComboBox(self)
-        self.зачистка_корона_специалист.addItems(zachistka)
-        self.зачистка_корона_специалист.setCurrentIndex(-1)
-        self.зачистка_корона_специалист.setPlaceholderText("Специалист по зачистке короны")
+        self.зачистка_корона_специалист = self.create_specialist_combobox(
+            "zachistka", zachistka, "Специалист по зачистке короны")
 
-        self.зачистка_лапа_специалист = QComboBox(self)
-        self.зачистка_лапа_специалист.addItems(zachistka)
-        self.зачистка_лапа_специалист.setCurrentIndex(-1)
-        self.зачистка_лапа_специалист.setPlaceholderText("Специалист по зачистке лапы")
+        self.зачистка_лапа_специалист = self.create_specialist_combobox(
+            "zachistka", zachistka, "Специалист по зачистке лапы")
 
-        self.зачистка_питатель_специалист = QComboBox(self)
-        self.зачистка_питатель_специалист.addItems(zachistka)
-        self.зачистка_питатель_специалист.setCurrentIndex(-1)
-        self.зачистка_питатель_специалист.setPlaceholderText("Специалист по зачистке питателя")
+        self.зачистка_питатель_специалист = self.create_specialist_combobox(
+            "zachistka", zachistka, "Специалист по зачистке питателя")
 
         self.примечание = QLineEdit(self)
         self.примечание.setPlaceholderText("Примечание")
@@ -676,6 +760,88 @@ class MainWindow(QWidget):
                     border-bottom: 2px solid {border_color};
                     margin-bottom: 8px;
                 """)
+
+    def create_specialist_combobox(self, category, items, placeholder):
+        combo = QComboBox(self)
+        combo.addItems(items)
+        combo.setCurrentIndex(-1)
+        combo.setPlaceholderText(placeholder)
+        
+        # Добавляем контекстное меню
+        combo.setContextMenuPolicy(Qt.CustomContextMenu)
+        combo.customContextMenuRequested.connect(
+            lambda pos, cb=combo, cat=category, ph=placeholder: 
+            self.show_specialist_context_menu(pos, cb, cat, ph)
+        )
+        
+        return combo
+
+    def show_specialist_context_menu(self, pos, combo, category, category_name):
+        """Показывает контекстное меню при правом клике на комбобокс"""
+        menu = QMenu()
+        add_action = QAction("Добавить специалиста", self)
+        add_action.triggered.connect(
+            lambda: self.add_specialist_dialog(category, category_name, combo)
+        )
+        menu.addAction(add_action)
+        
+        # Отображаем меню
+        menu.exec_(combo.mapToGlobal(pos))
+    
+    def add_specialist_dialog(self, category, category_name, combo):
+        """Открывает диалог для добавления нового специалиста"""
+        dialog = AddSpecialistDialog(category_name, self)
+        if dialog.exec_():
+            new_specialist = dialog.specialist_name
+            # Добавляем специалиста в хранилище
+            success = add_specialist(category, new_specialist)
+            if success:
+                # Обновляем комбобокс
+                self.update_specialist_comboboxes(category)
+                QMessageBox.information(
+                    self, 
+                    "Специалист добавлен", 
+                    f"Специалист '{new_specialist}' успешно добавлен в категорию '{category_name}'."
+                )
+            else:
+                QMessageBox.warning(
+                    self, 
+                    "Ошибка", 
+                    f"Не удалось добавить специалиста '{new_specialist}'. Возможно, он уже существует."
+                )
+
+    def update_specialist_comboboxes(self, category):
+        """Обновляет все комбобоксы для указанной категории"""
+        specialists = load_specialists()
+        items = specialists[category]
+        
+        # Словарь комбобоксов и их категорий
+        comboboxes = {
+            "scleyks": [self.сборка_кластера_специалист],
+            "controlers": [self.контроль_сборки_кластера_специалист],
+            "bolgar": [self.болгарка_специалист],
+            "termob": [self.термообработка_специалист],
+            "drobem": [self.дробеметная_обработка_специалист],
+            "zachistka": [
+                self.зачистка_корона_специалист,
+                self.зачистка_лапа_специалист,
+                self.зачистка_питатель_специалист
+            ]
+        }
+        
+        # Обновляем все комбобоксы для указанной категории
+        if category in comboboxes:
+            for combo in comboboxes[category]:
+                current_text = combo.currentText()
+                combo.clear()
+                combo.addItems(items)
+                
+                # Пытаемся восстановить предыдущий выбор
+                if current_text and current_text in items:
+                    index = combo.findText(current_text)
+                    combo.setCurrentIndex(index)
+                else:
+                    combo.setCurrentIndex(-1)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
