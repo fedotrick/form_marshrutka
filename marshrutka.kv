@@ -1,0 +1,584 @@
+#:kivy 2.1.0
+#:import hex kivy.utils.get_color_from_hex
+#:import Factory kivy.factory.Factory
+
+# Регистрируем классы из Python
+<GroupBox>:
+    orientation: 'vertical'
+    padding: 15
+    spacing: 15
+    size_hint_y: None
+    height: self.minimum_height
+    canvas.before:
+        Color:
+            rgba: hex('#FFFFFF')
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [8]
+        Color:
+            rgba: hex('#DDDBDA')
+        Line:
+            rounded_rectangle: [self.x, self.y, self.width, self.height, 8]
+            width: 1
+
+<CustomLabel@Label>:
+    color: hex('#181818')
+    size_hint_y: None
+    height: 40
+    text_size: self.width, None
+    halign: 'left'
+    valign: 'middle'
+    padding: 10, 0
+    font_size: 16
+
+<CustomTextInput@TextInput>:
+    size_hint_y: None
+    height: 50
+    multiline: False
+    padding: [15, 15, 15, 15]
+    background_color: 1, 1, 1, 1
+    foreground_color: hex('#181818')
+    cursor_color: hex('#0176D3')
+    font_size: 16
+
+<CustomSpinner@Spinner>:
+    size_hint_y: None
+    height: 50
+    background_color: 1, 1, 1, 1
+    color: hex('#181818')
+    option_cls: "SpinnerOption"
+    sync_height: True
+    font_size: 16
+    canvas.after:
+        Color:
+            rgba: hex('#0176D3') if self.values else [0, 0, 0, 0]
+        Line:
+            width: 2
+            points: [self.x + self.width - 20, self.y + 25 - 8, self.x + self.width - 20, self.y + 25 + 8]
+        Line:
+            width: 2
+            points: [self.x + self.width - 20 - 8, self.y + 25, self.x + self.width - 20 + 8, self.y + 25]
+
+<CustomButton@Button>:
+    size_hint_y: None
+    height: 60
+    background_color: hex('#0176D3')
+    color: 1, 1, 1, 1
+    background_normal: ''
+    background_down: ''
+    border: (0, 0, 0, 0)
+    font_size: 18
+
+<TabButton@ToggleButton>:
+    group: 'tabs'
+    size_hint_y: None
+    height: 50
+    background_normal: ''
+    background_down: ''
+    background_color: hex('#FFFFFF') if self.state == 'normal' else hex('#0176D3')
+    color: hex('#0176D3') if self.state == 'normal' else hex('#FFFFFF')
+    border: (0, 0, 0, 0)
+    font_size: 16
+    allow_no_selection: False
+
+<GroupTitle@Label>:
+    size_hint_y: None
+    height: 40
+    color: hex('#0176D3')
+    font_size: 18
+    bold: True
+    text_size: self.width, None
+    halign: 'left'
+    valign: 'middle'
+
+<MarshrutkaScreen>:
+    orientation: 'vertical'
+    padding: 20
+    spacing: 15
+    canvas.before:
+        Color:
+            rgba: hex('#F3F3F3')
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    
+    # Определение свойств для доступа к виджетам
+    uchet_nomer: uchet_nomer
+    naimenovanie: naimenovanie
+    tip_exp: tip_exp
+    primechanie: primechanie
+    
+    # Сборка кластера
+    sborka_data: sborka_data
+    sborka_specialist: sborka_specialist
+    sborka_kolichestvo: sborka_kolichestvo
+    
+    # Контроль сборки кластера
+    kontrol_data: kontrol_data
+    kontrol_vremya: kontrol_vremya
+    kontrol_specialist: kontrol_specialist
+    
+    # Обработка
+    bolgarka_data: bolgarka_data
+    bolgarka_specialist: bolgarka_specialist
+    termob_specialist: termob_specialist
+    drobemet_specialist: drobemet_specialist
+    
+    # Зачистка
+    zachistka_korona: zachistka_korona
+    zachistka_lapa: zachistka_lapa
+    zachistka_pitatel: zachistka_pitatel
+    
+    # Верхняя панель с заголовком и переключателем темы
+    BoxLayout:
+        size_hint_y: None
+        height: 60
+        orientation: 'horizontal'
+        
+        Label:
+            text: 'МАРШРУТНАЯ КАРТА'
+            font_size: 28
+            bold: True
+            color: hex('#0176D3')
+            size_hint_x: 0.9
+            text_size: self.width, None
+            halign: 'left'
+            valign: 'middle'
+        
+        Button:
+            id: theme_button
+            text: 'Темная тема'
+            size_hint: None, None
+            size: 140, 50
+            background_color: hex('#DDDBDA')
+            color: hex('#181818')
+            on_release: app.toggle_theme()
+    
+    # Панель с вкладками
+    BoxLayout:
+        id: tabs_panel
+        size_hint_y: None
+        height: 50
+        orientation: 'horizontal'
+        spacing: 2
+        padding: [0, 10, 0, 0]
+        
+        TabButton:
+            text: 'Общие данные'
+            state: 'down'
+            on_release: root.switch_tab('general')
+        
+        TabButton:
+            text: 'Сборка и контроль'
+            on_release: root.switch_tab('assembly')
+        
+        TabButton:
+            text: 'Обработка'
+            on_release: root.switch_tab('processing')
+        
+        TabButton:
+            text: 'Зачистка'
+            on_release: root.switch_tab('cleaning')
+    
+    # Контейнер для содержимого вкладок
+    ScreenManager:
+        id: screen_manager
+        size_hint_y: 1
+        
+        # Вкладка "Общие данные"
+        Screen:
+            name: 'general'
+            BoxLayout:
+                orientation: 'vertical'
+                spacing: 15
+                padding: 10
+                
+                GroupBox:
+                    GroupTitle:
+                        text: 'Информация об отливке'
+                    
+                    BoxLayout:
+                        orientation: 'vertical'
+                        spacing: 15
+                        size_hint_y: None
+                        height: self.minimum_height
+                        
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 50
+                            spacing: 15
+                            
+                            CustomLabel:
+                                text: 'Учетный номер:'
+                                size_hint_x: 0.3
+                            
+                            CustomSpinner:
+                                id: uchet_nomer
+                                text: ''
+                                size_hint_x: 0.7
+                                font_size: 16
+                        
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 50
+                            spacing: 15
+                            
+                            CustomLabel:
+                                text: 'Наименование:'
+                                size_hint_x: 0.3
+                            
+                            CustomTextInput:
+                                id: naimenovanie
+                                hint_text: 'Наименование отливки'
+                                size_hint_x: 0.7
+                        
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 50
+                            spacing: 15
+                            
+                            CustomLabel:
+                                text: 'Тип эксперимента:'
+                                size_hint_x: 0.3
+                            
+                            CustomTextInput:
+                                id: tip_exp
+                                hint_text: 'Тип эксперимента'
+                                size_hint_x: 0.7
+                
+                GroupBox:
+                    GroupTitle:
+                        text: 'Дополнительно'
+                    
+                    BoxLayout:
+                        orientation: 'horizontal'
+                        size_hint_y: None
+                        height: 100
+                        spacing: 15
+                        
+                        CustomLabel:
+                            text: 'Примечание:'
+                            size_hint_x: 0.2
+                        
+                        CustomTextInput:
+                            id: primechanie
+                            hint_text: 'Примечание'
+                            size_hint_x: 0.8
+                            height: 100
+                            multiline: True
+                            
+                Widget:
+                    # Заполнитель для прокрутки
+        
+        # Вкладка "Сборка и контроль"
+        Screen:
+            name: 'assembly'
+            BoxLayout:
+                orientation: 'vertical'
+                spacing: 15
+                padding: 10
+                
+                GroupBox:
+                    GroupTitle:
+                        text: 'Сборка кластера'
+                    
+                    BoxLayout:
+                        orientation: 'vertical'
+                        spacing: 15
+                        size_hint_y: None
+                        height: self.minimum_height
+                        
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 50
+                            spacing: 15
+                            
+                            CustomLabel:
+                                text: 'Дата:'
+                                size_hint_x: 0.3
+                            
+                            CustomTextInput:
+                                id: sborka_data
+                                hint_text: 'ДД.ММ.ГГГГ'
+                                size_hint_x: 0.7
+                                text: root.get_current_date()
+                        
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 50
+                            spacing: 15
+                            
+                            CustomLabel:
+                                text: 'Специалист:'
+                                size_hint_x: 0.3
+                            
+                            CustomSpinner:
+                                id: sborka_specialist
+                                text: ''
+                                size_hint_x: 0.7
+                                on_text: root.on_spinner_select(self, self.text)
+                        
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 50
+                            spacing: 15
+                            
+                            CustomLabel:
+                                text: 'Количество:'
+                                size_hint_x: 0.3
+                            
+                            CustomTextInput:
+                                id: sborka_kolichestvo
+                                hint_text: 'Количество кластера'
+                                size_hint_x: 0.7
+                                input_filter: 'int'
+                
+                GroupBox:
+                    GroupTitle:
+                        text: 'Контроль сборки'
+                    
+                    BoxLayout:
+                        orientation: 'vertical'
+                        spacing: 15
+                        size_hint_y: None
+                        height: self.minimum_height
+                        
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 50
+                            spacing: 15
+                            
+                            CustomLabel:
+                                text: 'Дата:'
+                                size_hint_x: 0.3
+                            
+                            CustomTextInput:
+                                id: kontrol_data
+                                hint_text: 'ДД.ММ.ГГГГ'
+                                size_hint_x: 0.7
+                                text: root.get_current_date()
+                        
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 50
+                            spacing: 15
+                            
+                            CustomLabel:
+                                text: 'Время:'
+                                size_hint_x: 0.3
+                            
+                            CustomTextInput:
+                                id: kontrol_vremya
+                                hint_text: 'ЧЧ:ММ'
+                                size_hint_x: 0.7
+                                text: root.get_current_time()
+                        
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 50
+                            spacing: 15
+                            
+                            CustomLabel:
+                                text: 'Специалист:'
+                                size_hint_x: 0.3
+                            
+                            CustomSpinner:
+                                id: kontrol_specialist
+                                text: ''
+                                size_hint_x: 0.7
+                                on_text: root.on_spinner_select(self, self.text)
+                
+                Widget:
+                    # Заполнитель для прокрутки
+        
+        # Вкладка "Обработка"
+        Screen:
+            name: 'processing'
+            BoxLayout:
+                orientation: 'vertical'
+                spacing: 15
+                padding: 10
+                
+                GroupBox:
+                    GroupTitle:
+                        text: 'Обработка'
+                    
+                    BoxLayout:
+                        orientation: 'vertical'
+                        spacing: 15
+                        size_hint_y: None
+                        height: self.minimum_height
+                        
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 50
+                            spacing: 15
+                            
+                            CustomLabel:
+                                text: 'Дата болгарки:'
+                                size_hint_x: 0.4
+                            
+                            CustomTextInput:
+                                id: bolgarka_data
+                                hint_text: 'ДД.ММ.ГГГГ'
+                                size_hint_x: 0.6
+                                text: root.get_current_date()
+                        
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 50
+                            spacing: 15
+                            
+                            CustomLabel:
+                                text: 'Специалист болгарки:'
+                                size_hint_x: 0.4
+                            
+                            CustomSpinner:
+                                id: bolgarka_specialist
+                                text: ''
+                                size_hint_x: 0.6
+                                on_text: root.on_spinner_select(self, self.text)
+                        
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 50
+                            spacing: 15
+                            
+                            CustomLabel:
+                                text: 'Специалист термообработки:'
+                                size_hint_x: 0.4
+                            
+                            CustomSpinner:
+                                id: termob_specialist
+                                text: ''
+                                size_hint_x: 0.6
+                                on_text: root.on_spinner_select(self, self.text)
+                        
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 50
+                            spacing: 15
+                            
+                            CustomLabel:
+                                text: 'Специалист дробеметки:'
+                                size_hint_x: 0.4
+                            
+                            CustomSpinner:
+                                id: drobemet_specialist
+                                text: ''
+                                size_hint_x: 0.6
+                                on_text: root.on_spinner_select(self, self.text)
+                
+                Widget:
+                    # Заполнитель для прокрутки
+        
+        # Вкладка "Зачистка"
+        Screen:
+            name: 'cleaning'
+            BoxLayout:
+                orientation: 'vertical'
+                spacing: 15
+                padding: 10
+                
+                GroupBox:
+                    GroupTitle:
+                        text: 'Зачистка'
+                    
+                    BoxLayout:
+                        orientation: 'vertical'
+                        spacing: 15
+                        size_hint_y: None
+                        height: self.minimum_height
+                        
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 50
+                            spacing: 15
+                            
+                            CustomLabel:
+                                text: 'Специалист зачистки короны:'
+                                size_hint_x: 0.4
+                            
+                            CustomSpinner:
+                                id: zachistka_korona
+                                text: ''
+                                size_hint_x: 0.6
+                                on_text: root.on_spinner_select(self, self.text)
+                        
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 50
+                            spacing: 15
+                            
+                            CustomLabel:
+                                text: 'Специалист зачистки лапы:'
+                                size_hint_x: 0.4
+                            
+                            CustomSpinner:
+                                id: zachistka_lapa
+                                text: ''
+                                size_hint_x: 0.6
+                                on_text: root.on_spinner_select(self, self.text)
+                        
+                        BoxLayout:
+                            orientation: 'horizontal'
+                            size_hint_y: None
+                            height: 50
+                            spacing: 15
+                            
+                            CustomLabel:
+                                text: 'Специалист зачистки питателя:'
+                                size_hint_x: 0.4
+                            
+                            CustomSpinner:
+                                id: zachistka_pitatel
+                                text: ''
+                                size_hint_x: 0.6
+                                on_text: root.on_spinner_select(self, self.text)
+                
+                Widget:
+                    # Заполнитель для прокрутки
+    
+    # Панель с кнопками навигации по вкладкам и сохранения
+    BoxLayout:
+        size_hint_y: None
+        height: 80
+        orientation: 'horizontal'
+        spacing: 15
+        padding: [0, 15, 0, 0]
+        
+        CustomButton:
+            text: '← Назад'
+            size_hint_x: 0.3
+            background_color: hex('#DDDBDA')
+            color: hex('#181818')
+            on_release: root.previous_tab()
+        
+        CustomButton:
+            text: 'Сохранить'
+            size_hint_x: 0.4
+            background_color: hex('#45C65A')
+            on_release: root.save_data()
+        
+        CustomButton:
+            text: 'Вперед →'
+            size_hint_x: 0.3
+            background_color: hex('#DDDBDA')
+            color: hex('#181818')
+            on_release: root.next_tab() 
